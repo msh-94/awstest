@@ -21,7 +21,7 @@ function TestPage() {
 
     const res = await axios.post(`/api/rds?content=${content}`);
     setRdsResult(res.data);
-  };
+  }; // push
 
   // 3. Redis 캐싱
   const callCache = async () => {
