@@ -42,8 +42,8 @@ jobs:                       # [필수] 작업(Job) 집합 정의
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}    # [필수] IAM Secret
           region: ap-northeast-2                                   # [필수] AWS 서울리전
           # 당신 프로젝트 기준 EB 설정
-          application_name: springweb           # [필수] EB Application 이름
-          environment_name: Springweb-env       # [필수] EB Environment 이름
+          application_name: springweb-msh           # [필수] EB Application 이름
+          environment_name: Springweb-msh-env       # [필수] EB Environment 이름
           version_label: "springweb-${{ steps.time.outputs.formattedTime }}"
           # [선택] 버전 이름 (Timestamp 포함)
           deployment_package: "./build/libs/${{ env.ARTIFACT }}"
