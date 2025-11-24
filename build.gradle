@@ -1,0 +1,104 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
+    // Node Gradle 플러그인 추가
+    id "com.github.node-gradle.node" version "7.0.1" // 최신 호환 버전 확인 권장
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // 1. 스프링 웹
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    // 2. 롬복
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    // 3. 비크립트 알고리즘 라이브러리
+    implementation 'org.springframework.security:spring-security-crypto:6.4.4'
+    // 4. J(자바)JWT 라이브러리
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // 5. 데이터베이스  MySql JDBC
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    // 6. JPA
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // 7. Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // 8. AWS S3
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.1.1'
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+
+
+
+// --- React 빌드 관련 Task 정의 (이전과 동일) ---
+
+// 1. npm install 실행 Task (React 의존성 설치)
+task npmInstallReact(type: NpmTask) {
+    description = "Install Node.js dependencies from package.json"
+    workingDir = file("${project.projectDir}/src/main/reactapp") // <<<--- 작업 디렉토리 명시적 지정 // reactapp -> 폴더명
+    args = ['install']
+    // dependsOn npmCacheClean // 이전 오류 라인 (필요시 복구/수정)
+    inputs.file("src/main/reactapp/package.json")
+    inputs.file("src/main/reactapp/package-lock.json") // 또는 yarn.lock
+    outputs.dir("src/main/reactapp/node_modules")
+}
+
+// 2. npm run build 실행 Task (React 앱 빌드)
+task npmBuildReact(type: NpmTask) {
+    description = "Build the React application using npm run build"
+    dependsOn npmInstallReact
+    workingDir = file("${project.projectDir}/src/main/reactapp") // reactapp -> 폴더명
+    args = ['run', 'build']
+    inputs.dir("src/main/reactapp/src")
+    inputs.dir("src/main/reactapp/public")
+    inputs.file("src/main/reactapp/package.json")
+    // *** 사용하는 React 빌드 도구에 맞춰 'dist' 또는 'build'로 수정하세요! ***
+    outputs.dir("src/main/reactapp/dist")
+}
+
+// 3. 리액트가 실행되고 실행된 결과물을 스프링의 resources 폴더에 복사
+// 스프링 환경에 리액트 빌드(실행) 결과를 넣어서 스프링 환경에서 리액트 통합
+// 스프링 : 8080 , 리액트 : 5173 : 2개의 서버를 스프링 8080 으로 통합
+// 문제점 : 사용자의 모든 요청의 스프링 우선, 즉] 리액트 라우터가 생략
+task copyReactBuild(type: Copy) {
+    description = "Copy React build output to Spring Boot static resources"
+    dependsOn npmBuildReact
+    // *** 사용하는 React 빌드 도구에 맞춰 'dist' 또는 'build'로 수정! ***
+    from "${project.projectDir}/src/main/reactapp/dist"
+    into "${project.buildDir}/resources/main/static"
+}
+
+// --- Task 의존성 설정 (이전과 동일) ---
+processResources {
+    dependsOn copyReactBuild
+}
+
+// --- Clean Task (이전과 동일) ---
+clean {
+    delete file("${project.projectDir}/src/main/reactapp/node_modules")
+    // *** 사용하는 React 빌드 도구에 맞춰 'dist' 또는 'build'로 수정! ***
+    delete file("${project.projectDir}/src/main/reactapp/dist")
+}
